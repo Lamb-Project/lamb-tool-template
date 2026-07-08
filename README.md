@@ -86,6 +86,12 @@ configuration, step by step.
 
 One page, launch to grade: [`docs/anatomy.md`](docs/anatomy.md).
 
+## Try it locally
+
+A screenshot walkthrough — set up the tool, register it in a mock LMS, and
+run the full launch → chat → grade flow without needing Moodle:
+[`docs/testing-with-lti-test-tool.md`](docs/testing-with-lti-test-tool.md).
+
 ## Growing this into a LAMB extension
 
 The contract for folding a tool built on this template back into the LAMB
