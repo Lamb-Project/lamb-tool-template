@@ -19,7 +19,7 @@ from xml.sax.saxutils import escape
 
 import httpx
 
-from .. import config
+from .. import settings_store
 
 
 def _oauth_escape(s: str) -> str:
@@ -84,18 +84,23 @@ def _outcome_xml(sourcedid: str, score_0_1: float, comment: str) -> str:
 def send_grade(sourcedid: str, outcome_url: str, score_0_1: float,
                comment: str = "") -> dict:
     """Send one replaceResult to the LMS. Returns {success, status_code, detail}."""
+    consumer_key = settings_store.get("lti_consumer_key")
+    secret = settings_store.get("lti_secret")
+    if not consumer_key or not secret:
+        return {"success": False, "status_code": None, "detail": "tool not configured"}
+
     xml = _outcome_xml(sourcedid, score_0_1, comment)
     body_hash = base64.b64encode(hashlib.sha1(xml.encode()).digest()).decode()
 
     oauth_params = {
-        "oauth_consumer_key": config.LTI_CONSUMER_KEY,
+        "oauth_consumer_key": consumer_key,
         "oauth_nonce": uuid.uuid4().hex,
         "oauth_signature_method": "HMAC-SHA1",
         "oauth_timestamp": str(int(time.time())),
         "oauth_version": "1.0",
         "oauth_body_hash": body_hash,
     }
-    oauth_params["oauth_signature"] = _sign("POST", outcome_url, oauth_params, config.LTI_SECRET)
+    oauth_params["oauth_signature"] = _sign("POST", outcome_url, oauth_params, secret)
 
     auth_header = "OAuth " + ", ".join(
         f'{k}="{_oauth_escape(v)}"' for k, v in sorted(oauth_params.items())

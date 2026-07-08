@@ -18,7 +18,7 @@ import hmac
 import time
 import urllib.parse
 
-from .. import config
+from .. import config, settings_store
 from ..db import check_and_store_nonce
 
 
@@ -43,9 +43,14 @@ def compute_signature(params: dict, http_method: str, base_url: str,
 def validate_launch(form: dict, launch_url: str) -> tuple[bool, str]:
     """Full launch validation. Returns (ok, reason). Reason is safe to log
     but deliberately vague in HTTP responses."""
+    consumer_key = settings_store.get("lti_consumer_key")
+    secret = settings_store.get("lti_secret")
+    if not consumer_key or not secret:
+        return False, "tool not configured (set LTI credentials at /admin)"
+
     if form.get("lti_message_type") != "basic-lti-launch-request":
         return False, "not a basic-lti-launch-request"
-    if form.get("oauth_consumer_key") != config.LTI_CONSUMER_KEY:
+    if form.get("oauth_consumer_key") != consumer_key:
         return False, "unknown oauth_consumer_key"
     if form.get("oauth_signature_method") != "HMAC-SHA1":
         return False, "unsupported oauth_signature_method"
@@ -61,7 +66,7 @@ def validate_launch(form: dict, launch_url: str) -> tuple[bool, str]:
     if not nonce:
         return False, "missing oauth_nonce"
 
-    expected = compute_signature(form, "POST", launch_url, config.LTI_SECRET)
+    expected = compute_signature(form, "POST", launch_url, secret)
     received = form.get("oauth_signature", "")
     if not hmac.compare_digest(expected, received):
         return False, "signature mismatch"

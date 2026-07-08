@@ -20,6 +20,7 @@ the LAMB ecosystem as an extension.
 
 | Piece | File | Yours to change? |
 |---|---|---|
+| Admin console (config + LTI URL) | `app/routers/admin.py` | As you add settings |
 | LTI 1.1 launch + OAuth validation | `app/lti/validation.py` | Rarely — it's the security boundary |
 | Grade passback (Basic Outcomes) | `app/lti/outcomes.py` | The *policy* yes, the signing no |
 | LAMB API client | `app/lamb_client.py` | If you call LAMB differently |
@@ -50,17 +51,31 @@ bundled test LMS: see [`docs/dev-harness.md`](docs/dev-harness.md).
 
 ## Configuration
 
-All configuration is environment variables (`.env`). See
-[`.env.example`](.env.example) for the annotated list. The essentials:
+Configuration is split in two:
 
-- `LAMB_API_BASE` / `LAMB_API_KEY` — your LAMB instance and the key this
-  tool uses to reach it. The key is held **server-side only** and never
-  reaches the browser.
-- `LTI_CONSUMER_KEY` / `LTI_SECRET` — must match the External Tool
-  configuration you create in Moodle/Atenea.
+**Boot config — environment (`.env`)**, needed before the tool can serve:
+
+- `ADMIN_USERNAME` / `ADMIN_PASSWORD` — protect the admin console.
 - `PUBLIC_BASE_URL` — the URL the LMS uses to reach this tool. Behind a
   reverse proxy this must be the *public* URL, because the OAuth signature
   is computed over it.
+
+**Runtime config — the admin console (`/admin`)**, set after the tool is up:
+
+- **LAMB API base URL + API key** — your LAMB instance and the key this tool
+  uses to reach it. The key is held **server-side only** and never reaches
+  the browser.
+- **LTI consumer key + shared secret** — must match the External Tool
+  configuration you create in Moodle/Atenea.
+
+Log in at `/admin` with the credentials from `.env`, fill in those four
+values, and the page shows you the **LTI launch URL** to register in your
+LMS. Until they're set, the tool safely rejects all launches.
+
+> For Docker/CI you may pre-seed the four runtime values from the
+> environment on first boot (see the commented block in
+> [`.env.example`](.env.example)); once saved via `/admin`, the stored value
+> wins. See [`.env.example`](.env.example) for the full annotated list.
 
 ## Deploying to Atenea / Moodle
 

@@ -11,8 +11,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db
-from .routers import lti_launch, chat, instructor
+from . import db, settings_store
+from .routers import lti_launch, chat, instructor, admin
 
 app = FastAPI(title="lamb-tool-template", docs_url=None, redoc_url=None)
 
@@ -20,6 +20,9 @@ app = FastAPI(title="lamb-tool-template", docs_url=None, redoc_url=None)
 @app.on_event("startup")
 def _startup() -> None:
     db.init_db()
+    # First-boot convenience: seed runtime settings from the environment if
+    # present. Once set via /admin, stored values win. See settings_store.
+    settings_store.seed_from_env()
 
 
 @app.get("/healthz")
@@ -27,6 +30,7 @@ def healthz() -> JSONResponse:
     return JSONResponse({"status": "ok"})
 
 
+app.include_router(admin.router)
 app.include_router(lti_launch.router)
 app.include_router(chat.router)
 app.include_router(instructor.router)

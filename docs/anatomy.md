@@ -72,8 +72,12 @@ place.
 
 ## Where the security lives
 
+- `app/routers/admin.py` — the config console, guarded by the `.env`
+  credentials; sits outside the launch path and holds the runtime settings
+  (LAMB URL + key, LTI consumer key + secret) in the database.
 - `app/lti/validation.py` — the inbound boundary. Never launch without it.
 - `app/lti/outcomes.py` — the outbound signing. Grades are signed the same
   way launches are verified.
-- `app/sessions.py` — everything past the launch is gated on a session.
-- `app/lamb_client.py` — the only place the LAMB key exists.
+- `app/sessions.py` — everything past the launch is gated on a session
+  (LTI sessions and the admin session both live here).
+- `app/lamb_client.py` — the only place the LAMB key is read.

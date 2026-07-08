@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, Request
 
-from . import config
+from . import config, db
 from .db import get_conn, now_iso
 
 
@@ -55,3 +55,26 @@ def require_instructor(request: Request):
     if not session["is_instructor"]:
         raise HTTPException(status_code=403, detail="Instructor role required.")
     return session
+
+
+# --- admin console sessions (separate from LTI) ------------------------------
+
+def create_admin_session() -> str:
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now(timezone.utc) + timedelta(hours=config.ADMIN_SESSION_HOURS)
+    db.create_admin_session(token, expires.isoformat(timespec="seconds"))
+    return token
+
+
+def is_admin(request: Request) -> bool:
+    token = request.cookies.get("admin_session")
+    if not token:
+        return False
+    row = db.get_admin_session(token)
+    return row is not None and row["expires_at"] >= now_iso()
+
+
+def require_admin(request: Request):
+    if not is_admin(request):
+        raise HTTPException(status_code=303, detail="Login required.",
+                            headers={"Location": "/admin/login"})

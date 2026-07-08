@@ -55,6 +55,19 @@ CREATE TABLE IF NOT EXISTS lti_nonces (
     seen_at INTEGER NOT NULL
 );
 
+-- Runtime configuration set on the /admin page (see settings_store.py).
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- Admin console sessions (separate from LTI sessions).
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    token TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+
 -- Grade-passback plumbing captured at launch time, per user per activity.
 CREATE TABLE IF NOT EXISTS enrollments (
     user_id INTEGER NOT NULL REFERENCES users(id),
@@ -151,6 +164,28 @@ def check_and_store_nonce(nonce: str) -> bool:
             return True
         except sqlite3.IntegrityError:
             return False
+
+
+# --- admin sessions -----------------------------------------------------------
+
+def create_admin_session(token: str, expires_at: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO admin_sessions (token, created_at, expires_at) VALUES (?, ?, ?)",
+            (token, now_iso(), expires_at),
+        )
+
+
+def get_admin_session(token: str):
+    with get_conn() as conn:
+        return conn.execute(
+            "SELECT * FROM admin_sessions WHERE token = ?", (token,)
+        ).fetchone()
+
+
+def delete_admin_session(token: str) -> None:
+    with get_conn() as conn:
+        conn.execute("DELETE FROM admin_sessions WHERE token = ?", (token,))
 
 
 # --- activities ---------------------------------------------------------------

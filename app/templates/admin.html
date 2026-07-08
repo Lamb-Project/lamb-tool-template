@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+  <div class="row" style="justify-content: space-between;">
+    <h1>Tool configuration</h1>
+    <form method="post" action="/admin/logout"><button type="submit">Log out</button></form>
+  </div>
+
+  {% if saved %}<p class="muted">Settings saved.</p>{% endif %}
+  {% if not configured %}
+    <p class="error">The tool is not fully configured yet. LTI launches are
+      rejected until the LAMB and LTI settings below are filled in.</p>
+  {% endif %}
+
+  <section class="card">
+    <h2>Register this tool in your LMS</h2>
+    <p>Use this as the <strong>Tool URL</strong> when you create the External
+       Tool in Moodle / Atenea:</p>
+    <p><code id="lti-url">{{ lti_launch_url }}</code>
+       <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('lti-url').textContent)">Copy</button></p>
+    <p class="muted">The consumer key and shared secret you set below must match
+       what you enter in the LMS.</p>
+  </section>
+
+  <form method="post" action="/admin/settings" class="card">
+    <h2>LAMB connection</h2>
+    <label>LAMB API base URL
+      <input name="lamb_api_base" value="{{ settings.lamb_api_base }}"
+             placeholder="https://lamb.example.edu:9099">
+    </label>
+    <label>LAMB API key
+      <input name="lamb_api_key" type="password"
+             placeholder="{{ 'unchanged — leave blank to keep' if settings.lamb_api_key_set else 'not set' }}">
+    </label>
+
+    <h2>LTI 1.1 credentials</h2>
+    <label>Consumer key
+      <input name="lti_consumer_key" value="{{ settings.lti_consumer_key }}">
+    </label>
+    <label>Shared secret
+      <input name="lti_secret" type="password"
+             placeholder="{{ 'unchanged — leave blank to keep' if settings.lti_secret_set else 'not set' }}">
+    </label>
+
+    <button type="submit">Save</button>
+  </form>
+{% endblock %}

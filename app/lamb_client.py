@@ -13,15 +13,26 @@ from typing import Iterator
 
 import httpx
 
-from . import config
+from . import settings_store
 
-_HEADERS = {"Authorization": f"Bearer {config.LAMB_API_KEY}"}
+
+class NotConfigured(RuntimeError):
+    """Raised when the admin has not yet set the LAMB URL + key."""
+
+
+def _lamb():
+    base = settings_store.get("lamb_api_base")
+    key = settings_store.get("lamb_api_key")
+    if not base or not key:
+        raise NotConfigured("LAMB URL and API key are not set — configure the tool at /admin.")
+    return base.rstrip("/"), {"Authorization": f"Bearer {key}"}
 
 
 def list_models() -> list[dict]:
     """Return [{id, name}] for the assistants this key may see."""
-    url = f"{config.LAMB_API_BASE}/v1/models"
-    resp = httpx.get(url, headers=_HEADERS, timeout=30)
+    base, headers = _lamb()
+    url = f"{base}/v1/models"
+    resp = httpx.get(url, headers=headers, timeout=30)
     resp.raise_for_status()
     data = resp.json().get("data", [])
     models = []
@@ -39,9 +50,10 @@ def stream_chat(model: str, messages: list[dict]) -> Iterator[str]:
 
     Only model/messages/stream are sent — that is exactly what LAMB's
     facade forwards today, and all a chatbot needs."""
-    url = f"{config.LAMB_API_BASE}/v1/chat/completions"
+    base, headers = _lamb()
+    url = f"{base}/v1/chat/completions"
     payload = {"model": model, "messages": messages, "stream": True}
-    with httpx.stream("POST", url, headers=_HEADERS, json=payload, timeout=120) as resp:
+    with httpx.stream("POST", url, headers=headers, json=payload, timeout=120) as resp:
         resp.raise_for_status()
         for line in resp.iter_lines():
             if not line or not line.startswith("data:"):

@@ -14,7 +14,19 @@ hostname and set in `.env`:
 PUBLIC_BASE_URL=https://your-tool.example.edu
 ```
 
-## 2. Create the External Tool in Moodle
+## 2. Configure the tool in its admin console
+
+Before touching Moodle, open `https://your-tool.example.edu/admin`, log in
+with the `ADMIN_USERNAME` / `ADMIN_PASSWORD` from your `.env`, and set:
+
+- the **LAMB API base URL** and **API key** the tool uses to reach LAMB,
+- the **LTI consumer key** and **shared secret** (pick any values — you'll
+  enter the same ones in Moodle in the next step).
+
+The admin page also displays the **Tool URL** (`.../lti/launch`) to copy
+into Moodle. Until these are set, the tool rejects every launch.
+
+## 3. Create the External Tool in Moodle
 
 As a teacher (or site admin, for a site-wide tool):
 
@@ -33,20 +45,20 @@ activity directly in a course.
 | **Privacy** | Share launcher's name **and** email: *Always* — the tool uses them for the roster and grade attribution |
 | **Privacy** | Accept grades from the tool: *Always* — required for passback |
 
-## 3. Add the activity to a course
+## 4. Add the activity to a course
 
 Add an **External Tool** activity in a course and select the tool you
 configured. Set the activity to accept grades if you want passback into the
 gradebook.
 
-## 4. First launch (instructor)
+## 5. First launch (instructor)
 
 The first time you (as instructor) open the activity, you land on the
 tool's **setup** page: give it a title, pick the LAMB assistant, and choose
 whether grades pass back. Save. From then on the activity opens on the
 dashboard.
 
-## 5. Students
+## 6. Students
 
 Students opening the activity get the chatbot bound to the assistant you
 chose. If you enabled grading, their grades appear in your dashboard; press
