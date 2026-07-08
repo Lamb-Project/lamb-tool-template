@@ -128,5 +128,6 @@ real LMS nor a running LAMB.
 
 ## License
 
-GPL-3.0 — see [LICENSE](LICENSE). Built by the LAMB Project
-(UPC × UPV/EHU). Contributions welcome.
+LAMB is licensed under the GNU General Public License v3.0 (GPL v3).
+
+Copyright (c) 2024-2026 Marc Alier (UPC) @granludo & Juanan Pereira (UPV/EHU) @juananpe
