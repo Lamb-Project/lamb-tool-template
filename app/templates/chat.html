@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ activity_title }}{% endblock %}
+{% block content %}
+  <h1>{{ activity_title }}</h1>
+  <div id="thread" class="thread">
+    {% for m in history %}
+      <div class="msg {{ m.role }}">{{ m.content }}</div>
+    {% endfor %}
+  </div>
+  <form id="chat-form" class="composer">
+    <input id="msg" autocomplete="off" placeholder="Type your message…" required>
+    <button type="submit">Send</button>
+  </form>
+  <script>window.SESSION_TOKEN = {{ session_token|tojson }};</script>
+  <script src="/static/chat.js"></script>
+{% endblock %}

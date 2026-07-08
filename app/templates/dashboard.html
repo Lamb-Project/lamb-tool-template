@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ activity['title'] if activity else '' }}{% endblock %}
+{% block content %}
+  <h1>{{ activity['title'] if activity else 'Activity' }}</h1>
+  <p class="muted">Assistant: {{ activity['assistant_name'] if activity else '—' }}
+     · <a href="/setup?session={{ session_token }}">edit setup</a></p>
+
+  <table class="roster">
+    <thead>
+      <tr><th>Student</th><th>Turns</th><th>Proposed</th><th>Grade (0–10)</th><th>Feedback</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in people %}
+      <tr data-user="{{ p.user_id }}">
+        <td>{{ p.full_name or p.email or ('user ' ~ p.user_id) }}</td>
+        <td>{{ p.user_turns }}</td>
+        <td>{{ '%.0f%%' % (p.proposed * 100) if p.proposed is not none else '—' }}</td>
+        <td><input class="score" type="number" min="0" max="10" step="0.5"
+              value="{{ p.score if p.score is not none else '' }}"></td>
+        <td><input class="feedback" value="{{ p.feedback or '' }}"></td>
+        <td>
+          <button class="save">Save</button>
+          <span class="status">{{ 'sent' if p.sent_to_lms else '' }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if activity and activity['grading_enabled'] %}
+    <button id="send-all">Send saved grades to LMS</button>
+    <p id="send-result" class="muted"></p>
+  {% else %}
+    <p class="muted">Grade passback is disabled for this activity.</p>
+  {% endif %}
+
+  <script>
+    const token = {{ session_token|tojson }};
+    const hdr = { 'X-Session-Token': token, 'Content-Type': 'application/json' };
+
+    document.querySelectorAll('tr[data-user]').forEach(row => {
+      row.querySelector('.save').addEventListener('click', async () => {
+        const score = row.querySelector('.score').value;
+        if (score === '') return;
+        // dashboard shows a 0–10 grade; the LMS wants 0–1.
+        await fetch('/grades/set', { method: 'POST', headers: hdr, body: JSON.stringify({
+          user_id: row.dataset.user,
+          score: parseFloat(score) / 10.0,
+          feedback: row.querySelector('.feedback').value,
+        })});
+        row.querySelector('.status').textContent = 'saved';
+      });
+    });
+
+    const sendAll = document.getElementById('send-all');
+    if (sendAll) sendAll.addEventListener('click', async () => {
+      const res = await fetch('/grades/send', { method: 'POST', headers: hdr });
+      const data = await res.json();
+      document.getElementById('send-result').textContent =
+        `Sent ${data.sent}. Failed ${data.failed.length}.`;
+    });
+  </script>
+{% endblock %}

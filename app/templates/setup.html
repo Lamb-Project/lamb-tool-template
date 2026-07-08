@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Activity setup{% endblock %}
+{% block content %}
+  <h1>Set up this activity</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form id="setup-form">
+    <label>Activity title
+      <input name="title" value="{{ activity['title'] if activity else '' }}" required>
+    </label>
+    <label>Assistant
+      <select name="assistant_model" required>
+        <option value="" disabled {{ '' if activity else 'selected' }}>— pick one —</option>
+        {% for m in models %}
+          <option value="{{ m.id }}"
+            {{ 'selected' if activity and activity['assistant_model'] == m.id else '' }}>
+            {{ m.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="row">
+      <input type="checkbox" name="grading_enabled"
+        {{ 'checked' if activity and activity['grading_enabled'] else '' }}>
+      Enable grade passback
+    </label>
+    <label>Turns for completion
+      <input type="number" name="min_turns" min="0"
+        value="{{ activity['min_turns'] if activity else 3 }}">
+    </label>
+    <button type="submit">Save</button>
+  </form>
+  <p class="muted">{{ models|length }} assistant(s) available with this tool's LAMB key.</p>
+  <script>
+    const token = {{ session_token|tojson }};
+    document.getElementById('setup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const res = await fetch('/setup', {
+        method: 'POST', body: fd, headers: { 'X-Session-Token': token },
+      });
+      const data = await res.json();
+      if (data.ok) window.location = data.redirect;
+    });
+  </script>
+{% endblock %}

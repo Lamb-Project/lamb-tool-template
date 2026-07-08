@@ -1,0 +1,11 @@
+services:
+  tool:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      - TOOL_DB_PATH=/srv/tool/data/tool.db
+    volumes:
+      - ./data:/srv/tool/data
+    restart: unless-stopped
