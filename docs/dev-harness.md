@@ -42,6 +42,34 @@ Use the test suite for the LTI/session logic; use `lamb-lti-test-tool` when
 you want to click through the real launch → chat → grade flow in a browser,
 or to exercise the actual `replaceResult` round-trip.
 
+## The full-stack browser test
+
+`tests/e2e_full.py` drives the entire loop with a real (headless) browser:
+it registers this tool in `lamb-lti-test-tool`, launches as an instructor
+(setup → pick a LAMB assistant → dashboard), launches as a student (chat →
+send a message → assistant streams a reply from LAMB), grades the student,
+and confirms the mock LMS received the grade via `replaceResult`.
+
+```bash
+pip install -r requirements-dev.txt
+python -m playwright install chromium         # ~150 MB, one-time
+
+# with LAMB up, this tool up on :8090, and the mock LMS up:
+uvicorn app:app --port 8001                    # in /opt/lamb-lti-test-tool
+python tests/e2e_full.py                        # writes /tmp/e2e-*.png
+```
+
+Two things it configures for you:
+
+- It **probes LAMB** and picks an assistant that actually answers (skipping
+  image-generation assistants), so the chat has a text reply to show.
+- It gives the chat a generous timeout — LAMB assistants call real LLMs and
+  a full streamed reply can take a minute or more.
+
+> **Port note:** the mock LMS defaults to `:8000`, which on a LAMB dev box
+> collides with GLM's `llama-server`. Run it on `:8001`
+> (`uvicorn app:app --port 8001`) — that's what `tests/e2e_full.py` expects.
+
 ## The one gotcha: PUBLIC_BASE_URL
 
 The OAuth signature is computed over the URL the LMS used to reach your

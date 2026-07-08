@@ -47,13 +47,16 @@ async def lti_launch(request: Request):
 
     # Capture grade-passback plumbing at launch: sourcedid is per-user-per-
     # link and only arrives on the launch, so this is the moment to store it.
-    db.upsert_enrollment(
-        user_id=user_id,
-        resource_link_id=resource_link_id,
-        consumer_guid=consumer_guid,
-        lis_result_sourcedid=form.get("lis_result_sourcedid", ""),
-        lis_outcome_service_url=form.get("lis_outcome_service_url", ""),
-    )
+    # Students only — the roster and gradebook are for learners, not the
+    # instructor configuring the activity.
+    if not instructor:
+        db.upsert_enrollment(
+            user_id=user_id,
+            resource_link_id=resource_link_id,
+            consumer_guid=consumer_guid,
+            lis_result_sourcedid=form.get("lis_result_sourcedid", ""),
+            lis_outcome_service_url=form.get("lis_outcome_service_url", ""),
+        )
 
     token = sessions.create_session(user_id, resource_link_id, consumer_guid, instructor)
 
